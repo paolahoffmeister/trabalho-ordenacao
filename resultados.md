@@ -1,3 +1,5 @@
+> **Nota:** Valores `0` indicam que o tempo de execução foi inferior à resolução do clock do sistema (< 1 ns por execução), mesmo com múltiplas repetições internas. Isso ocorre principalmente no Insertion Sort em arrays já ordenados, que possui complexidade O(n) nesse cenário. 
+
 ## Cenario: Crescente
 
 | n | Bubble Sort | Insertion Sort | Selection Sort | Heap Sort | Shell Sort | Merge Sort | Quick Sort |
