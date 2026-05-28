@@ -81,7 +81,6 @@ void mergeSort(vector<int> arr) {
     if (arr.size() > 1) mergeSortHelper(arr, 0, arr.size()-1);
 }
 
-// Quick Sort com pivo aleatorio para evitar stack overflow em arrays ordenados
 int partitionRand(vector<int>& arr, int low, int high) {
     uniform_int_distribution<int> dist(low, high);
     int pivotIdx = dist(rng);
@@ -95,14 +94,8 @@ int partitionRand(vector<int>& arr, int low, int high) {
 void quickSortHelper(vector<int>& arr, int low, int high) {
     while (low < high) {
         int pi = partitionRand(arr, low, high);
-        // recursao no menor lado, iteracao no maior (evita stack overflow)
-        if (pi - low < high - pi) {
-            quickSortHelper(arr, low, pi-1);
-            low = pi+1;
-        } else {
-            quickSortHelper(arr, pi+1, high);
-            high = pi-1;
-        }
+        if (pi - low < high - pi) { quickSortHelper(arr, low, pi-1); low = pi+1; }
+        else { quickSortHelper(arr, pi+1, high); high = pi-1; }
     }
 }
 
@@ -113,25 +106,14 @@ void quickSort(vector<int> arr) {
 // ===================== ARRAYS =====================
 
 vector<int> gerarCrescente(int n) {
-    vector<int> arr(n);
-    iota(arr.begin(), arr.end(), 1);
-    return arr;
+    vector<int> arr(n); iota(arr.begin(), arr.end(), 1); return arr;
 }
-
 vector<int> gerarDecrescente(int n) {
-    vector<int> arr(n);
-    iota(arr.begin(), arr.end(), 1);
-    reverse(arr.begin(), arr.end());
-    return arr;
+    vector<int> arr(n); iota(arr.begin(), arr.end(), 1); reverse(arr.begin(), arr.end()); return arr;
 }
-
 vector<int> gerarAleatorioSemRep(int n) {
-    vector<int> arr(n);
-    iota(arr.begin(), arr.end(), 1);
-    shuffle(arr.begin(), arr.end(), rng);
-    return arr;
+    vector<int> arr(n); iota(arr.begin(), arr.end(), 1); shuffle(arr.begin(), arr.end(), rng); return arr;
 }
-
 vector<int> gerarAleatorioComRep(int n) {
     uniform_int_distribution<int> dist(1, n);
     vector<int> arr(n);
@@ -141,11 +123,18 @@ vector<int> gerarAleatorioComRep(int n) {
 
 // ===================== ESTATISTICA =====================
 
-long long medirTempo(void(*fn)(vector<int>), const vector<int>& original) {
+int loopsInternos(int n) {
+    if (n <= 512)   return 1000;
+    if (n <= 4096)  return 100;
+    if (n <= 16384) return 10;
+    return 1;
+}
+
+long long medirTempo(void(*fn)(vector<int>), const vector<int>& original, int loops) {
     auto start = chrono::high_resolution_clock::now();
-    fn(original);
+    for (int i = 0; i < loops; i++) fn(original);
     auto end = chrono::high_resolution_clock::now();
-    return chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+    return chrono::duration_cast<chrono::nanoseconds>(end - start).count() / loops;
 }
 
 double mediaFiltrada(vector<long long> tempos) {
@@ -188,7 +177,6 @@ int main() {
     int nCen = 4;
 
     ofstream md("resultados.md");
-    md << fixed << setprecision(2);
 
     for (int c = 0; c < nCen; c++) {
         cout << "\n=== Cenario: " << nomesCen[c] << " ===" << endl;
@@ -198,7 +186,8 @@ int main() {
 
         for (int t = 0; t < nTamanhos; t++) {
             int n = tamanhos[t];
-            cout << "  n = " << n << "..." << flush;
+            int loops = loopsInternos(n);
+            cout << "  n = " << n << " (loops=" << loops << ")..." << flush;
             md << "| " << n;
 
             vector<int> original = gens[c](n);
@@ -206,7 +195,7 @@ int main() {
             for (int a = 0; a < nAlgs; a++) {
                 vector<long long> tempos;
                 for (int r = 0; r < repeticoes; r++)
-                    tempos.push_back(medirTempo(algs[a], original));
+                    tempos.push_back(medirTempo(algs[a], original, loops));
                 double media = mediaFiltrada(tempos);
                 md << " | " << (long long)media;
             }
